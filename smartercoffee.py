@@ -56,7 +56,6 @@ class SmarterCoffee:
 		t.start()
 
 	def _server(self, received_commands):
-
 		while True:
 			if not self._connected:
 				self._device.connect((self._ip, self._port))
@@ -73,7 +72,6 @@ class SmarterCoffee:
 				self._device.close()
 				self._connected = False
 				time.sleep(900)
-
 
 	def process_command(self, data):
 		if len(data) == 7:
@@ -119,6 +117,7 @@ class SmarterCoffee:
 		else:
 			logging.warning("Coffee cups must be a value between 1 and 12. Setting 1 cup.")
 			cups_hex = "01"
+
 		cups_hex = "36" + cups_hex + "7e" if whole_packet else cups_hex
 		logging.debug(cups_hex)
 		if send:
@@ -170,7 +169,7 @@ class SmarterCoffee:
 		return time_hex
 
 	def start_with_settings(self, cups, strength, hotplate, grinder, send=True):
-		command_hex = "33" + self.set_cups(cups, False) + self.set_strength(strength, False) + self.hotplate_timer(hotplate, False) + self.set_grinder(grinder, False) + "7e"
+		command_hex = "33" + self.set_cups(cups, whole_packet=False, send=False) + self.set_strength(strength, whole_packet=False, send=False) + self.hotplate_timer(hotplate, whole_packet=False, send=False) + self.set_grinder(grinder, whole_packet=False, send=False) + "7e"
 		logging.debug(command_hex)
 		if send:
 			self.send_command(command_hex)
