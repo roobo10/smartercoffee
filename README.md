@@ -47,12 +47,14 @@ Copy the files to the '''custom_components''' directory in the Home Assistant co
 
 In your configuration.yaml file add:
 
-    smartercoffee:
-      ip: [Coffee Maker IP Address]
-      presets:
-        one:
-          cups: 2
-          strength: 0
-        two:
-          cups: 4
-          strength: 2
+```yaml
+smartercoffee:
+  ip: [Coffee Maker IP Address]
+  presets:
+    one:
+      cups: 2
+      strength: 0
+    two:
+      cups: 4
+      strength: 2
+```
