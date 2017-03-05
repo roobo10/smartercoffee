@@ -21,15 +21,15 @@ class SmarterCoffee:
             '0x2'  : 0,
             '0x0'  : 1,
             '0x1'  : 2,
-            '0x11' : 3,s
+            '0x11' : 3,
             '0x12' : 4,
             '0x13' : 5
         }
-        self.water_level_text = ["Insufficient Water","Very Low","Low","Half","Half 1","Full"]
+        self.water_level_text = ["Insufficient Water", "Very Low", "Low", "Half", "Half 1", "Full"]
 
-        self.coffee_strength_text = ["Weak","Medium","Strong"]
+        self.coffee_strength_text = ["Weak", "Medium", "Strong"]
 
-        self.responses_text = ["OK","Brewing Error","","Insufficient Water","Command does not exist","No Carafe"]
+        self.responses_text = ["OK", "Brewing Error", "X", "Insufficient Water", "Command does not exist", "No Carafe"]
 
         self._ip = ip_address
         self._port = 2081
