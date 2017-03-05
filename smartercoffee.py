@@ -3,6 +3,7 @@ from queue import Queue
 import threading
 import logging
 import binascii
+import time
 
 class SmarterCoffee:
 
@@ -42,6 +43,11 @@ class SmarterCoffee:
 		self.coffee_strength = None
 		self.cups = None
 
+		self._device = socket.socket(socket.AF_INET, type=socket.SOCK_STREAM)
+		self._device.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+		self._device.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		self._connected = False
+
 	def start_server (self):
 		t = threading.Thread(target=self._server, args=(self._received_commands,))
 		# classifying as a daemon, so they will die when the main dies
@@ -50,16 +56,24 @@ class SmarterCoffee:
 		t.start()
 
 	def _server(self, received_commands):
-		self._device = socket.socket(socket.AF_INET, type=socket.SOCK_STREAM)
-		self._device.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-		self._device.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-		self._device.connect((self._ip, self._port))
 
 		while True:
-			data = self._device.recv(4096) # buffer size is 1024 bytes
-			hex_data = list(map(hex, data))
-			self.process_command(hex_data)
-			logging.debug("Hex Data: {}".format(hex_data))
+			if not self._connected:
+				self._device.connect((self._ip, self._port))
+				self._connected = True
+				running_time = time.time()
+
+				while True and running_time + 120 > time.time():
+					data = self._device.recv(4096) # buffer size is 1024 bytes
+					hex_data = list(map(hex, data))
+					self.process_command(hex_data)
+					logging.debug("Hex Data: {}".format(hex_data))
+
+				self._device.shutdown(socket.SHUT_RDWR)
+				self._device.close()
+				self._connected = False
+				time.sleep(900)
+
 
 	def process_command(self, data):
 		if len(data) == 7:
@@ -163,5 +177,22 @@ class SmarterCoffee:
 		return command_hex
 
 	def send_command(self, command):
+		opened_connection = False
+		if not self._connected:
+			self._device.connect((self._ip, self._port))
+			self._connected = True
+			opened_connection = True
 		logging.debug(bytes.fromhex(command))
 		self._device.send(bytes.fromhex(command))
+
+		running_time = time.time()
+		while True and running_time + 5 > time.time():
+			data = self._device.recv(4096) # buffer size is 1024 bytes
+			hex_data = list(map(hex, data))
+			self.process_command(hex_data)
+			logging.debug("Hex Data: {}".format(hex_data)
+
+		if opened_connection:
+			self._device.shutdown(socket.SHUT_RDWR)
+			self._device.close()
+			self._connected = False
