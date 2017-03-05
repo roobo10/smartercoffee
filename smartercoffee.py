@@ -190,7 +190,7 @@ class SmarterCoffee:
 			data = self._device.recv(4096) # buffer size is 1024 bytes
 			hex_data = list(map(hex, data))
 			self.process_command(hex_data)
-			logging.debug("Hex Data: {}".format(hex_data)
+			logging.debug("Hex Data: {}".format(hex_data))
 
 		if opened_connection:
 			self._device.shutdown(socket.SHUT_RDWR)
