@@ -6,7 +6,6 @@ import binascii
 import time
 
 class SmarterCoffee:
-
 	_port = 2081
 	_ip = ''
 	_received_commands = Queue()
