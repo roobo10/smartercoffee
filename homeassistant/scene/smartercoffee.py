@@ -22,40 +22,42 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
 
 	scene_items = []
 	if len(sc.SC_SCENES) == 0:
-		scene_items.append(SCScene(s))
+		default_coffee_scene = SCScene(s)
+		scene_items.append(default_coffee_scene)
 
 		for c in sc.SC_CONFIG['smartercoffee']['presets']:
-			logging.info(c)
 			cups = sc.SC_CONFIG['smartercoffee']['presets'][c]['cups']
 			strength = sc.SC_CONFIG['smartercoffee']['presets'][c]['strength']
 
 			logging.info("SmarterCoffee Preset: Cups - %d; Strength - %d." % (cups,strength))
-			scene_items.append(SCScene(s,cups=cups,strength=strength))
+			coffee_scene = SCScene(s,cups=cups,strength=strength)
+			scene_items.append(coffee_scene)
 
 		add_devices(scene_items)
+
 		sc.SC_SCENES = [item.entity_id for item in scene_items]
 		sc.SC_SCENE_GROUP = group.Group.create_group(hass, "Make Coffee", sc.SC_SCENES)
 
 
 class SCScene(Scene):
-	def __init__(self, sc, cups=-1, strength=-1):
+	def __init__(self, sc, cups=None, strength=None):
 		self._sc = sc
 		self.cups = cups
 		self.strength = strength
 
 	@property
 	def entity_id(self):
-		if self.cups == -1:
-			return "scene.sc_make_with_current"
-		else:
-			return "scene.sc_make_%s_cups_%s" % (str(self.cups),self._sc.coffee_strength_text[self.strength])
+		id = "scene.sc_make_with_current"
+		if self.cups is not None:
+			id = "scene.sc_make_%d_%d" % (self.cups, self.strength)
+		return id
 
 	@property
 	def name(self):
-		if self.cups == -1:
-			return "Make Coffee with Current Settings"
-		else:
-			return "Make %s Cups of %s Coffee" % (str(self.cups),self._sc.coffee_strength_text[self.strength])
+		name = "Make Coffee with Current Settings"
+		if self.cups is not None:
+			name = "Make %d Cups of %s Coffee" % (self.cups,self._sc.coffee_strength_text[self.strength])
+		return name
 
 	@property
 	def icon(self):
@@ -67,8 +69,11 @@ class SCScene(Scene):
 		return True
 
 	def activate(self):
-		if self.cups == -1:
+		logging.info("Making some coffee...")
+		if self.cups is None:
+			logging.info("Making Coffee with Current Settings")
 			self._sc.start_with_current_settings()
 		else:
+			logging.info("Making %d Cups of %s Coffee." % (self.cups, self._sc.coffee_strength_text[self.strength].title()))
 			self._sc.start_with_settings(self.cups, self.strength, 5, True)
 		return True

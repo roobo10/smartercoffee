@@ -41,7 +41,8 @@ if not isinstance(numeric_level, int):
 
 logging.basicConfig(level=numeric_level)
 
-s = smartercoffee.SmarterCoffee('192.168.1.106')
+
+s = smartercoffee.SmarterCoffee('192.168.1.55')
 s.start_server()
 s.watch_updates(update)
 
@@ -66,5 +67,7 @@ while True:
 	elif p == ".make":
 		logging.debug("Make with Current Settings...")
 		s.start_with_current_settings()
+	elif p[:6] == ".make ":
+		s.start_with_settings(1,2,5,False)
 	elif p == ".send":
 		s.send_command(last_command)
