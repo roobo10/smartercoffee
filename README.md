@@ -22,23 +22,23 @@ import smartercoffee
 Create an instance of SmarterCoffee and start the client with a misleading function name:
 
 ```python
-    s = smartercoffee.SmarterCoffee(COFFEE_MACHINE_IP)
-    s.start_server()
+s = smartercoffee.SmarterCoffee(COFFEE_MACHINE_IP)
+s.start_server()
 ```
 
 Create a callback function to receive updates:
 
 ```python
-    s.watch_updates(callback_function)
+s.watch_updates(callback_function)
 ```
 
 To make a coffee with default settings:
 ```python
-    s.start_with_current_settings()
+s.start_with_current_settings()
 ```
 To use custom settings:
 ```python
-    s.start_with_settings(CUPS, STRENGTH, HOTPLATE, GRINDER)
+s.start_with_settings(CUPS, STRENGTH, HOTPLATE, GRINDER)
 ```
 
 # Home Assistant
