@@ -2,7 +2,6 @@ import socket
 from queue import Queue
 import threading
 import logging
-import binascii
 import time
 
 class SmarterCoffee:
@@ -40,13 +39,16 @@ class SmarterCoffee:
         self.wifi_strength = None
         self.coffee_strength = None
         self.cups = None
-
+        self.hotplate = None
+        self.carafe = None
+        self.grinder = None
+        self.state = "Loading..."
         self._device = socket.socket(socket.AF_INET, type=socket.SOCK_STREAM)
         self._device.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         self._device.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self._connected = False
 
-    def start_server (self):
+    def start_server(self):
         t = threading.Thread(target=self._server, args=(self._received_commands,))
         # classifying as a daemon, so they will die when the main dies
         t.daemon = True
@@ -79,27 +81,26 @@ class SmarterCoffee:
             if changed:
                 self._last_update_data = data
 
-                status = int(data[1],16)
+                status = int(data[1], 16)
                 self.grinder = True if (status & 2) else False
                 self.carafe = True if (status & 1) else False
                 self.hotplate = True if (status & 56) else False
 
                 self.state = 'Boiling' if data[1] == '0x53' else 'Waiting'
                 self.state = 'Brewing' if data[1] == '0x51' else self.state
-                self.state = 'Done' if data[1] in ['0x45','0x47'] else self.state
+                self.state = 'Done' if data[1] in ['0x45', '0x47'] else self.state
                 self.state = 'No Carafe' if not self.carafe else self.state
 
-                self.waterLevelMessage = data[2]
                 self.water_level = self.water_level_number[data[2]]
-                self.wifi_strength = int(data[3],16)
-                self.coffee_strength = int(data[4],16)
-                self.cups = (int(data[5],16) & 15)
+                self.wifi_strength = int(data[3], 16)
+                self.coffee_strength = int(data[4], 16)
+                self.cups = (int(data[5], 16) & 15)
 
                 for callback in self._observers:
                     logging.info("Sending changes to observer")
                     callback(data)
         elif len(data) == 3:
-            response = int(data[1],16)
+            response = int(data[1], 16)
             print(response)
             if response == 0:
                 self.error = None
@@ -124,7 +125,7 @@ class SmarterCoffee:
 
     def set_grinder(self, value, whole_packet=True, send=True):
         grinder_hex = ""
-        if value == True:
+        if value:
             grinder_hex = "01"
         else:
             grinder_hex = "00"
@@ -175,10 +176,12 @@ class SmarterCoffee:
 
     def send_command(self, command):
         opened_connection = False
+        print(self._connected)
         if not self._connected:
             self._device.connect((self._ip, self._port))
             self._connected = True
             opened_connection = True
+
         logging.debug(bytes.fromhex(command))
         self._device.send(bytes.fromhex(command))
 
