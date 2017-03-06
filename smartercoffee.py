@@ -25,11 +25,11 @@ class SmarterCoffee:
             '0x12' : 4,
             '0x13' : 5
         }
-        self.water_level_text = ["Insufficient Water", "Very Low", "Low", "Half", "Half 1", "Full"]
+        self.water_level_text = ["Insufficient Water","Very Low","Low","Half","Half 1","Full"]
 
-        self.coffee_strength_text = ["Weak", "Medium", "Strong"]
+        self.coffee_strength_text = ["Weak","Medium","Strong"]
 
-        self.responses_text = ["OK", "Brewing Error", "X", "Insufficient Water", "Command does not exist", "No Carafe"]
+        self.responses_text = ["OK","Brewing Error","","Insufficient Water","Command does not exist","No Carafe"]
 
         self._ip = ip_address
         self._port = 2081
@@ -107,71 +107,70 @@ class SmarterCoffee:
                 self.error = self.responses_text[response]
             print(self.error)
 
+	def set_cups(self, number, whole_packet=True, send=True): #cups value can be between 1 - 12. Syntax for cups is 36xx7e where 36 is value for "set cups" xx is how many and 7e is packet terminator
+		cups_hex = ""
+		if number <= 12 and number >= 1:
+			cups_hex = "%0.2X" % number # convert to hex
+		else:
+			logging.warning("Coffee cups must be a value between 1 and 12. Setting 1 cup.")
+			cups_hex = "01"
 
-    def set_cups(self, number, whole_packet=True, send=True): #cups value can be between 1 - 12. Syntax for cups is 36xx7e where 36 is value for "set cups" xx is how many and 7e is packet terminator
-        cups_hex = ""
-        if number <= 12 and number >= 1:
-            cups_hex = "%0.2X" % number # convert to hex
-        else:
-            logging.warning("Coffee cups must be a value between 1 and 12. Setting 1 cup.")
-            cups_hex = "01"
+		cups_hex = "36" + cups_hex + "7e" if whole_packet else cups_hex
+		logging.debug(cups_hex)
+		if send:
+			self.send_command(cups_hex)
+		return cups_hex
 
-        cups_hex = "36" + cups_hex + "7e" if whole_packet else cups_hex
-        logging.debug(cups_hex)
-        if send:
-            self.send_command(cups_hex)
-        return cups_hex
+	def set_grinder(self, value, whole_packet=True, send=True):
+		grinder_hex = ""
+		if value == True:
+			grinder_hex = "01"
+		else:
+			grinder_hex = "00"
+		grinder_hex = "3c" + grinder_hex + "7e" if whole_packet else grinder_hex
+		logging.debug(grinder_hex)
+		if send:
+			self.send_command(grinder_hex)
+		return grinder_hex
 
-    def set_grinder(self, value, whole_packet=True, send=True):
-        grinder_hex = ""
-        if value == True:
-            grinder_hex = "01"
-        else:
-            grinder_hex = "00"
-        grinder_hex = "3c" + grinder_hex + "7e" if whole_packet else grinder_hex
-        logging.debug(grinder_hex)
-        if send:
-            self.send_command(grinder_hex)
-        return grinder_hex
+	def set_strength(self, strength, whole_packet=True, send=True): # strength value can be between 1 - 3 when send to machine the value vill be converterd to 0 - 2
+		strength = strength - 1
+		strength_hex = ""
+		if strength >= 0 and strength <= 2:
+			strength_hex = "%0.2X" % strength # convert to hex
+		else:
+			logging.warning("Coffee strength must be a value between 1 and 3. Setting strength to 1.")
+			strength_hex = "00"
+		strength_hex = "35" + strength_hex + "7e" if whole_packet else strength_hex
+		logging.debug(strength_hex)
+		if send:
+			self.send_command(strength_hex)
+		return strength_hex
 
-    def set_strength(self, strength, whole_packet=True, send=True): # strength value can be between 1 - 3 when send to machine the value vill be converterd to 0 - 2
-        strength = strength - 1
-        strength_hex = ""
-        if strength >= 0 and strength <= 2:
-            strength_hex = "%0.2X" % strength # convert to hex
-        else:
-            logging.warning("Coffee strength must be a value between 1 and 3. Setting strength to 1.")
-            strength_hex = "00"
-        strength_hex = "35" + strength_hex + "7e" if whole_packet else strength_hex
-        logging.debug(strength_hex)
-        if send:
-            self.send_command(strength_hex)
-        return strength_hex
+	def start_with_current_settings(self, send=True):
+		if send:
+			self.send_command("37")
+		return "37"
 
-    def start_with_current_settings(self, send=True):
-        if send:
-            self.send_command("37")
-        return "37"
+	def hotplate_timer(self, time_mins, whole_packet=True, send=True): #Timevalue is for how long the hot plate will be on before auto turning off. Lowest value is 5 min. Max value is ?
+		time_hex = ""
+		if time_mins < 5:
+			logging.warning("Minimum time is 5 minutes.  Setting timer to 5 minutes.")
+			time_hex = "05"
+		else:
+			time_hex = "%0.2X" % time_mins # convert to hex
+		time_hex = "3e" + time_hex + "7e" if whole_packet else time_hex
+		logging.debug(time_hex)
+		if send:
+			self.send_command(time_hex)
+		return time_hex
 
-    def hotplate_timer(self, time_mins, whole_packet=True, send=True): #Timevalue is for how long the hot plate will be on before auto turning off. Lowest value is 5 min. Max value is ?
-        time_hex = ""
-        if time_mins < 5:
-            logging.warning("Minimum time is 5 minutes.  Setting timer to 5 minutes.")
-            time_hex = "05"
-        else:
-            time_hex = "%0.2X" % time_mins # convert to hex
-        time_hex = "3e" + time_hex + "7e" if whole_packet else time_hex
-        logging.debug(time_hex)
-        if send:
-            self.send_command(time_hex)
-        return time_hex
-
-    def start_with_settings(self, cups, strength, hotplate, grinder, send=True):
-        command_hex = "33" + self.set_cups(cups, whole_packet=False, send=False) + self.set_strength(strength, whole_packet=False, send=False) + self.hotplate_timer(hotplate, whole_packet=False, send=False) + self.set_grinder(grinder, whole_packet=False, send=False) + "7e"
-        logging.debug(command_hex)
-        if send:
-            self.send_command(command_hex)
-        return command_hex
+	def start_with_settings(self, cups, strength, hotplate, grinder, send=True):
+		command_hex = "33" + self.set_cups(cups, whole_packet=False, send=False) + self.set_strength(strength, whole_packet=False, send=False) + self.hotplate_timer(hotplate, whole_packet=False, send=False) + self.set_grinder(grinder, whole_packet=False, send=False) + "7e"
+		logging.debug(command_hex)
+		if send:
+			self.send_command(command_hex)
+		return command_hex
 
     def send_command(self, command):
         opened_connection = False
